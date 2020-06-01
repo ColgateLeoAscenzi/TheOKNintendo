@@ -21,7 +21,7 @@ int px = 155;
 int py = 155;
 int oldpx = 0;
 int oldpy = 0;
-const float PSPEED = 8;
+const float PSPEED = 6;
 int xVel = 0;
 int yVel = 0;
 
@@ -57,8 +57,21 @@ int oldgx = 0;
 int oldgy = 0;
 int GSPEED = 7;
 
+
+
+//NEW METHOND
+int FOOD = 4;
+int WALLV = 1;
+int WALLH = 2;
+int WALLB = 3;
+int P1 = 2;
+int supermap[26][20];
+
+
+
   
 void setup() {
+
   tft.begin();
   tft.fillScreen(ILI9341_BLACK); // blanks the screen
   tft.setRotation(1); 
@@ -76,10 +89,12 @@ void setup() {
   pinMode(BPIN, INPUT); //B
   pinMode(RPIN, INPUT); //right
 
-  pinMode(20, INPUT);
+  pinMode(20, INPUT); //recieves gamemode
   pinMode(21, INPUT);
   pinMode(22, OUTPUT);//sends signal
 
+  //debug mode
+  pinMode(3, INPUT);
   //pin 20 and 21
   //if pin 20 high pin 21 low, pokemon
   //if pin 21 high 20 low, pacman
@@ -94,6 +109,7 @@ void setup() {
   
 
   Serial.print("Read 20 at ");Serial.print(GAMEMODE1);Serial.print(" and pin 21 at ");Serial.println(GAMEMODE2);
+
   
   Serial.begin(9600);
   //while (! Serial); //
@@ -104,6 +120,7 @@ void setup() {
   else if(GAMEMODE1 == 0 && GAMEMODE2 == 1){
     GAMEMODE = 1;
     Serial.println("Playing Pac-Man!");
+    initializeGrid(supermap);
     drawWalls(mapnum);
     addPacFood();
   }
@@ -111,6 +128,7 @@ void setup() {
     GAMEMODE = 2;
     Serial.println("Playing Super Segall Bros!");
   }
+
 }
 
 boolean held = false;
@@ -122,6 +140,10 @@ int facing = -1;
 
 void loop() {
  if(!gameover){
+  
+  if(digitalRead(20) == 0 && digitalRead(21) == 0){
+    GAMEMODE = -1;
+  }
   delay(50);
   
   //get key inputs
@@ -171,10 +193,12 @@ void loop() {
         }
 
         if(keynames[i] == "A"){
-          Serial.print(px);Serial.print(" ");Serial.println(py);
+          //Serial.print(px);Serial.print(" ");Serial.println(py);
+          drawGrid(supermap);
         }
         if(keynames[i] == "B"){
           Serial.println(score);
+          tft.fillScreen(ILI9341_BLACK);
         }
 
         
@@ -184,7 +208,10 @@ void loop() {
   held = false;
 
   //redraw elements
-  if(GAMEMODE == 1){
+  if(GAMEMODE == 0){
+    
+  }
+  else if(GAMEMODE == 1){
     
      //handle motion
       if(!inWall(maps[mapnum], px+xVel,py+yVel)){
@@ -196,6 +223,18 @@ void loop() {
         yVel = 0;
       }
   }
+  else if(GAMEMODE == 2){
+
+  }
+  else if(GAMEMODE == -1){
+
+      for(int x = 0; x < 320; x++){
+        for(int y = 0; y < 240; y++){
+          tft.fillRect(x,y,1,1,16777215*rand());
+        }
+      }
+  }
+ 
   
   if(oldpx != px || oldpy != py){
 
@@ -211,6 +250,7 @@ void loop() {
       drawWalls(mapnum);
       
       drawPacFood(food[mapnum]);
+     
       
       tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
       tft.setCursor(0,0);
@@ -227,9 +267,9 @@ void loop() {
       }
    
       if(MAXSCORE == score && MAXSCORE != 0){
-        tft.setCursor(60,90);
+        tft.setCursor(80,90);
         tft.setTextSize(3);
-        tft.print("GAME OVER");
+        tft.print("YOU WIN");
         gameover = true;
       }
 
@@ -238,6 +278,7 @@ void loop() {
     }
     else{
       drawGhost(gx,gy, oldgx, oldgy, facing, tick);
+      
     }
     
   }
@@ -252,6 +293,202 @@ void loop() {
   tick+=1;
  }
 
+
+}
+//int FOOD = 4;
+//int WALLV = 1;
+//int WALLH = 2;
+//int WALLB = 3;
+//int P1 = 2;
+//int supermap[26][20];
+
+void initializeGrid(int supermap[26][20]){
+  int row = 20;
+  int col = 26;
+
+  //clear map
+  for(int x = 0; x < col; x++){
+    for(int y = 0; y < row; y++){
+      supermap[x][y] = 0;
+    }
+  }
+
+  //add walls
+  for(int x = 1; x < col-1; x++){
+    for(int y = 1; y < row-2; y++){
+      if((x == 1 || x == 24) && (y == 1 || y == 17)){
+        supermap[x][y] = WALLB;
+      }
+      else if(x == 1 || x == 24){
+        supermap[x][y] = WALLV;
+      }
+      else if(y == 1 || y == 17){
+        supermap[x][y] = WALLH;
+      }
+      if(y == 2){
+        if(x == 12 || x == 13){
+          supermap[x][y] = WALLV;
+        }
+      }
+      else if(y == 3){
+        if(x == 12 || x == 13){
+          supermap[x][y] = WALLV;
+        }
+        if(x == 3 || x == 6 || x == 8 || x == 10 || x == 15 || x == 17 || x == 19 || x == 22){
+          supermap[x][y] = WALLB;
+        }
+        if(x == 4 || x == 5 || x == 9 || x == 16 || x == 20 || x == 21){
+          supermap[x][y] = WALLH;
+        }
+      }
+      else if(y == 4){
+        if(x == 12 || x == 13){
+          supermap[x][y] = WALLV;
+        }
+        if(x == 3 || x == 6 || x == 8 || x == 10 || x == 15 || x == 17 || x == 19 || x == 22){
+          supermap[x][y] = WALLV;
+        }
+        if(x == 4 || x == 5 || x == 9 || x == 16 || x == 20 || x == 21){
+          supermap[x][y] = -1;
+        }
+      }
+      else if(y == 5){
+        if(x == 3 || x == 6 || x == 8 || x == 10 || x == 15 || x == 17 || x == 19 || x == 22){
+          supermap[x][y] = WALLV;
+        }
+        if(x == 4 || x == 5 || x == 9 || x == 16 || x == 20 || x == 21){
+          supermap[x][y] = -1;
+        }
+      }
+      else if(y == 6){
+        if(x == 3 || x == 6 || x == 8 || x == 10 || x == 12 || x == 13 || x == 15 || x == 17 || x == 19 || x == 22){
+          supermap[x][y] = WALLB;
+        }
+        if(x == 4 || x == 5 || x == 9 || x == 16 || x == 20 || x == 21){
+          supermap[x][y] = WALLH;
+        }
+      }
+      else if(y == 7){
+       if(x == 12 || x == 13){
+          supermap[x][y] = WALLV;
+        }
+      }
+      else if(y == 8){
+       if(x == 2 || x == 3 || x == 4 || x == 5 || x == 12 || x == 13 || x == 20 || x == 21 || x == 22 || x == 23){
+          supermap[x][y] = WALLH;
+        }
+        if(x == 11 || x == 14 || x == 6 || x == 19 || x == 8 || x == 9 || x == 16 || x == 17){
+          supermap[x][y] = WALLB;
+        }
+      }
+      else if(y == 9){
+       if(x == 2 || x == 3 || x == 4 || x == 5 || x == 6 || x == 19 || x == 20 || x == 21 || x == 22 || x == 23){
+          supermap[x][y] = WALLH;
+        }
+        if(x == 8 || x == 9 || x == 16 || x == 17 || x == 11 || x == 14){
+          supermap[x][y] = WALLV;
+        }
+        if(x == 6 || x == 19){
+          supermap[x][y] = WALLB;
+        }
+        if(x == 12 || x == 13){
+          supermap[x][y] = -1;
+        }
+      }
+      else if(y == 10){
+        if(x == 8 || x == 9 || x == 16 || x == 17 || x == 11 || x == 14){
+          supermap[x][y] = WALLV;
+        }
+        if(x == 12 || x == 13){
+          supermap[x][y] = -1;
+        }
+      }
+      else if(y == 11){
+        if(x == 3 || x == 6 || x == 8 || x == 9 || x == 11 || x == 14 || x == 16 || x == 17 || x == 19 || x == 22){
+          supermap[x][y] = WALLB;
+        }
+        if(x == 12 || x == 13){
+          supermap[x][y] = WALLH;
+        }
+        if(x == 4 || x == 5 || x == 20 || x == 21){
+          supermap[x][y] = WALLH;
+        }
+      }
+      else if(y == 12){
+        if(x == 3 || x == 6 || x == 19 || x == 22){
+          supermap[x][y] = WALLB;
+        }
+        if(x == 4 || x == 5 || x == 20 || x == 21){
+          supermap[x][y] = WALLH;
+        }
+      }
+      else if(y == 13){
+        if(x == 5 || x == 6 || x == 8 || x == 17 || x == 19 || x == 20){
+          supermap[x][y] = WALLV;
+        }
+        if(x >= 10 && x <= 15){
+          supermap[x][y] = WALLH;
+        }
+      }
+      else if(y == 14){
+        if(x == 2 || x == 23 || x == 10 || x == 11 || x == 14 || x == 15){
+          supermap[x][y] = WALLH;
+        }
+        if(x == 3 || x == 22 || x == 12 || x == 13){
+          supermap[x][y] = WALLB;
+        }
+        if(x == 5 || x == 6 || x == 8 || x == 17 || x == 19 || x == 20){
+          supermap[x][y] = WALLV;
+        }
+      }
+      else if(y == 15){
+        if(x == 2 || x == 23){
+          supermap[x][y] = WALLH;
+        }
+        if(x == 3 || x == 22){
+          supermap[x][y] = WALLB;
+        }
+        if(x == 5 || x == 6 || x == 8 || x == 17 || x == 19 || x == 20 || x == 12 || x == 13){
+          supermap[x][y] = WALLV;
+        }
+      }
+      else if(y == 16){
+        if(x == 10 || x == 15){
+          supermap[x][y] = WALLV;
+        }
+      }
+//      else{
+//        supermap[x][y] = FOOD;
+//      }
+    }
+  }
+}
+void drawGrid(int supermap[26][20]){
+  int row = 20;
+  int col = 26;
+
+  for(int x = 1; x < col-1; x++){
+    for(int y = 1; y < row-2; y++){
+      drawWallPiece(x,y, supermap);
+    }
+  }
+}
+
+void drawWallPiece(int x, int y, int supermap[26][20]){
+      if(supermap[x][y] == WALLV){
+        tft.fillRect(x*12+4,y*12,4,12,ILI9341_BLUE);
+      }
+      else if(supermap[x][y] == WALLH){
+        tft.fillRect(x*12,y*12+4,12,4,ILI9341_BLUE);
+      }
+      else if(supermap[x][y] == WALLB){
+        tft.fillRect(x*12+4,y*12,4,12,ILI9341_BLUE);
+        tft.fillRect(x*12,y*12+4,12,4,ILI9341_BLUE);
+       // tft.fillRect(x*12,y*12,12,12,ILI9341_GREEN);
+      }
+      else if(supermap[x][y] == 0){
+        tft.fillCircle(x*12+6,y*12+6,2,ILI9341_YELLOW);
+      }
 
 }
 
@@ -460,6 +697,17 @@ void drawWalls(int mapNum){
       
     }
   }
+
 }
+
+//
+////NEW METHOND
+//int FOOD = 0;
+//int WALLV = 1;
+//int WALLH = 2;
+//int P1 = 2;
+//int supermap[20][26];
+
+  
 
 
